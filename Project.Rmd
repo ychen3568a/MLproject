@@ -1,0 +1,106 @@
+---
+title: "Practical Machine Learning Project"
+author: "Yuting Chen"
+date: "2023/5/2"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(caret)
+```
+
+
+# Data Wrangling
+```{r}
+train <- read.csv("pml-training.csv", na.strings=c("NA","","#DIV/0!"))
+train <- train[,colSums(is.na(train)) == 0] # pick columns without NA
+test <- read.csv("pml-testing.csv", na.strings=c("NA","","#DIV/0!"))
+test <- test[,colSums(is.na(test)) == 0]
+dim(train)
+dim(test)
+```
+
+```{r}
+# Remove certain variables according to our common sense
+train <- train[,-c(1:7)]
+test <- test[,-c(1:7)]
+```
+
+```{r}
+nzv(train[,-ncol(train)],saveMetrics=TRUE)
+```
+
+There is no zero variables, so we do not need to remove some variables.
+
+# Modeling
+
+```{r}
+# Data Splitting
+Train <- createDataPartition(train$classe, p = 0.6, list = FALSE)
+trainNew <- train[Train,]
+testNew <- train[-Train,]
+dim(trainNew)
+dim(testNew)
+```
+
+```{r}
+model <- train(classe ~ ., data = trainNew, method = "rf", metric = "Accuracy", preProcess=c("center", "scale"), trControl=trainControl(method = "cv", number = 4, p= 0.60, allowParallel = TRUE, seeds=NA))
+```
+
+```{r}
+predTest <- predict(model, newdata = testNew)
+confusionMatrix(predTest, testNew$classe)
+```
+
+Above results show that accuracy is 0.9963 which is very high, and the out-of-sample error is 0.37%.
+
+```{r}
+# The final model and predictors
+model$finalModel
+varImp(model)
+```
+
+
+Above results show that 2 variables were tried at each split and the reported OOB Estimated Error is 0.91%, which is very low.
+
+In addition, we have sufficient confidence to predict classe for the 20 test cases.
+
+# The Final Result 
+
+```{r}
+predict(model, newdata=test) # Using the test dataset for one
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
